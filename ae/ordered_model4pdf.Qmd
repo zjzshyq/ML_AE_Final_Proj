@@ -1,0 +1,448 @@
+---
+title: 'Analysis of User Preferences between AI-generated and Hand-drawn Artwork: A Case Study of pixiv.net'
+author:
+  - name: 'Yiqing Hu'
+    affiliation: 'University of Warsaw, Faculty of Economics Sciences'
+    email: 'y.hu7@student.uw.edu.pl'
+  - name: 'Rahila Mammadova Huseynova'
+    affiliation: 'University of Warsaw, Faculty of Economics Sciences'
+    email: 'r.mammadovah@student.uw.edu.pl'
+date: today
+format: 
+  pdf: 
+    citation_package: natbib
+documentclass: article
+fontsize: 11pt
+geometry: margin=1in
+latex-tinytex: false
+bibliography: bibliography.bib
+csl: ieee.csl
+---
+
+```{r echo=FALSE, message = FALSE}
+#library("LogisticDx")
+#library("ucminf")
+#library("aod")
+
+library("ordinal") #clm
+library(mlogit) # mprobit
+library(car) #Anova
+library(dplyr)
+library(knitr) # for printcl a table
+library('MASS') # polr
+library("oglmx") # ologit.reg
+library("pscl") # pR2
+library('lmtest') # coeftest, lrtest
+library("brant") # brant( Brant's test)
+library('performance') # r2_mckelvey
+library("BaylorEdPsych") # PseudoR2
+library("generalhoslem") # lipsitz, logitgof(Hosmer-Lemeshow), pulkrob(Pulkstenis-Robinson)
+
+source("ome.R")
+Sys.setenv(LANG = "en")
+options(scipen=100)
+setwd('/Users/huyiqing/PycharmProjects/UW_lab/ML_Project/ae')
+```
+
+# Abstract
+
+The emergence of AI drawing models, such as Stable-Diffusion (SD) and Midjourney, has led to a significant influx of AI-generated images in the online art community. In this study, we collected daily rankings of the top 50 AI-generated images and hand-drawn artwork from pixiv.net. Our objective was to explore the factors/variables influencing the ranking of these images and examine the preferences of ordinary users towards AI-generated images versus hand-drawn artwork using an ordered choice model. The ordered choice model allows us to analyze the ordinal nature of the rankings and investigate the impact of various factors on the preferences of users. The findings from this study will contribute to a better understanding of the impact of AI-generated artwork on user preferences and provide insights for the development of AI-assisted creative platforms.
+
+**keywords:** Ordered Choice Model, Artificial Intelligence, Generative AI
+
+# Introduction
+
+
+Generative AI model has emerged as a transformative technology with profound implications for the labor market. As highlighted by previous research, there is a growing need to understand the influence of ChatGPT and other AI-related services on the dynamics of employment[@EconomicsChatGPT]. The proliferation of AI drawing models, such as Stable-Diffusion (SD) and Midjourney, has led to a substantial increase in the prevalence of AI-generated images within the online art community. This emergence raises the need to investigate the factors influencing the rankings of these AI-generated images and the preferences of users in comparison to hand-drawn artwork. In response, our study aims to explore these factors and preferences through the application of an ordered choice model.
+
+By employing an ordered choice model, we seek to examine the ordinal nature of the rankings and assess the impact of various factors on user preferences. This approach enables a comprehensive analysis of the implications of AI-generated artwork and its influence on user preferences within the art community. The insights derived from this research will contribute to a deeper understanding of the impact of AI-generated artwork and provide valuable guidance for the development of AI-assisted creative platforms.
+
+To accomplish our research objectives, we utilize a dataset obtained from pixiv.net, a prominent platform where artists share their artwork. The dataset covers a period starting from November of the previous year and encompasses the continuous influx of AI-generated works. It comprises crucial information, including tags, Views, Likes, Bookmarks, and Comments for the Top 50 artworks or pictures each day. This rich dataset allows for an examination of the dynamic relationship between AI-generated artwork and user preferences over time, providing valuable insights into the evolving landscape of the online art community.
+
+In our analysis, we employ established econometric techniques commonly utilized in empirical research[@AIThemedCryptocurrencies], including logistic regression (MASS::polr) and probit regression (oglmx::ologit.reg and ordinal::clm). Furthermore, we conduct Goodness-of-fit tests, such as the Hosmer-Lemeshow, Lipsitz, and Pulkstenis-Robinson tests, to assess the initial performance of the models. To validate the ordinal assumptions, we employ Brant's test for the Odds Assumption. Additionally, metrics such as McFadden R2 and AIC are employed to facilitate comparisons between AI-generated models and man-made models. Variable selection is conducted using the lrtest for Likelihood and anova for the general-to-specific method[@General-to-specific]. Finally, we evaluate the models by examining the differential impact of various variables on the rankings of AI-generated images and conduct Marginal Effects analysis, specifically for the AI-generated model.
+
+By employing this comprehensive analytical framework, our study aims to provide a nuanced understanding of the intricate dynamics between AI-generated artwork and user preferences. The subsequent sections will present the empirical findings, contributing to the literature on the effects of AI-generated artwork within the online art community.
+
+# Data and Method
+
+This study utilizes data collected from [pixiv.net](http://pixiv.net), a popular platform for painters to share their artwork, to investigate the impact of AI-generated artworks on user-generated content. Starting from November of the previous year, the platform has witnessed a continuous influx of AI-generated works. The dataset comprises information such as tags, Views, Likes, Bookmarks, and Comments for the Top 50 artworks or pictures each day, spanning from October 31, 2022, to May 15, 2023.
+
+```{r}
+pixiv <- read.csv('../data/pixiv_tops_lm.csv',header=TRUE, sep=",")
+pixiv$rank <- as.integer((pixiv$rank-1) / 10)+1
+pixiv$is_comic <- as.factor(pixiv$is_comic)
+pixiv$is_Genshin <- as.factor(pixiv$is_Genshin)
+pixiv$is_Honkai <- as.factor(pixiv$is_Honkai)
+pixiv$views <-pixiv$views/1000 
+pixiv$like_rate2 <- pixiv$like_rate^2
+pixiv$mark_rate2 <- pixiv$mark_rate^2
+# pixiv$views <- scale(pixiv$views)
+```
+
+## Samples
+
+```{r}
+ai <- pixiv[pixiv$is_ai == 1, ]
+man <- pixiv[pixiv$is_ai == 0, ]
+```
+
+Number of all samples: `r nrow(pixiv)` <br/> Number of samples of AI-generated artworks: `r nrow(ai)` <br/> Number of samples of Hand-drawn Artworks: `r nrow(man)` <br/>
+
+## Parameters
+
+```{r echo=FALSE}
+column_names <- names(pixiv)
+column_types <- sapply(pixiv, class)
+desc <- c('artworkpage id','date of being top50', 
+          'ratio of liked amount of viewed amount',
+          'ratio of bookmarked number of viewed number', 'whether the artwork is comic',
+          'whether the artwork is generated by AI', 
+          'whether the artwork is about Genshin', 'whether the artwork is about Honkai',
+          'comment amount', 'viewed amount in thousand', 'dependent variable', 
+          'how many times being top50 for the same artwork', 
+          'date difference between created and being top', 'power of like_rate',
+          'power of mark_rate')
+
+df_info <- data.frame(Variable = as.character(column_names), 
+                      Type = as.character(column_types), 
+                      Description=as.character(desc))
+kable(df_info)
+```
+
+## Covariates and Model Selection
+
+Our research focuses on investigating the impact of various independent variables on the rankings of daily top 50 artworks on pixiv.net. The primary objective of our study is to develop an evaluation model that effectively captures the factors influencing these rankings.
+
+To address the issue of excessively detailed rankings ranging from 1 to 50, we have categorized the rankings into five levels by equally dividing the range. This categorization allows for a more manageable and meaningful analysis. The formula used to categorize the ranks is as follows:
+
+$$
+\text{tier} = \left\lfloor \frac{{\text{{rank}} - 1}}{{10}} \right\rfloor + 1
+$$
+
+By categorizing the ranks, we transform the dependent variable into an ordered, discrete, and continuous variable with five levels. This enables us to better understand the impact of the independent variables on the categorized rankings.
+
+Given the nature of the categorized rank as an ordered, continuous, and discrete variable, we employ an ordered choice model in our analysis. Specifically, we utilize both the ordered logit and ordered probit models to examine the relationships between the independent variables and the categorized rankings effectively.
+
+In our analysis using the R programming language, we fit a logit model firstly to the data. The model equation is as follows:
+
+```{r, message = FALSE}
+tier<-as.factor(ai$rank)
+logit_ai <- polr(tier~like_rate+mark_rate
+                  +is_comic+is_Genshin+is_Honkai
+                  +comments+top_cnt+date_diff_day
+                  +views
+                 ,data=ai)
+```
+
+By employing these modeling techniques, we aim to gain valuable insights into the influence of the independent variables on the rankings of artworks on pixiv.net. These methodological considerations adhere to the standards expected in academic research and contribute to the advancement of knowledge in the field.
+
+# Model Varification
+## Goodness-of-fit tests
+### Hosmer-Lemeshow and Lipsitz tests
+
+To assess the appropriateness of our model, we conducted Hosmer-Lemeshow and Lipsitz tests. These tests examine whether the form of our model adequately fits the data. If either of these tests indicates that the model is inappropriate, it suggests the presence of issues that need to be addressed.
+
+The H0 (null hypothesis) of the Lipsitz test and logitgof test is that the form of our model is appropriate for the data. If either test indicates that the H0 cannot be rejected, it implies that the model may have a problem, and corrective measures are needed. Only when both tests indicate that the model is appropriate can we confidently state that the model is suitable for our analysis.
+
+```{r}
+lipsitz.test(logit_ai) 
+```
+
+The Lipsitz test was performed, and the resulting p-value is 0.0000002942, which is less than the significance level of 5%. Therefore, we cannot reject the H0, indicating that the form of our model has a problem.
+
+```{r}
+logitgof(tier, fitted(logit_ai), g=5, ord = TRUE) # Lemeshow
+```
+
+Similarly, the logitgof test (Hosmer-Lemeshow test) was conducted with the model's fitted values, and the resulting p-value is 0.00007257, also less than the significance level of 5%. Consequently, we cannot reject the H0, suggesting that the form of our model has a problem.
+
+These goodness-of-fit tests provide valuable insights into the adequacy of our model. Their outcomes indicate the presence of issues that need to be addressed to improve the model's fit to the data. By recognizing and addressing these problems, we can refine our model and enhance its reliability for further analysis. These methodological considerations align with the rigorous standards expected in academic research, contributing to the robustness of our findings.
+
+### Pulkstenis-Robinson tests
+
+In addition to the Hosmer-Lemeshow and Lipsitz tests, we also conducted Pulkstenis-Robinson tests to assess the goodness of fit of our model. These tests are particularly suitable when dealing with models that include dummy variables, such as our model, which incorporates the dummy variables "is_comic," "is_Genshin," and "is_Honkai." The Pulkstenis-Robinson tests provide valuable insights into the model's fit and the impact of additional predictors.
+
+The Pulkstenis-Robinson chi-squared test evaluates the null hypothesis that there is no significant departure from the expected frequencies based on the ordinal logistic regression model. In simpler terms, this test assesses whether the model fits the observed data adequately, without evidence of lack of fit. The Pulkstenis-Robinson deviance test, on the other hand, compares the more complex model (our model with additional predictors) to a simpler baseline model to determine if the additional predictors significantly improve the model fit.
+
+```{r warning=FALSE}
+pulkrob.chisq(logit_ai, c("is_comic",'is_Genshin', 'is_Honkai'))
+pulkrob.deviance(logit_ai, c("is_comic",'is_Genshin', 'is_Honkai'))
+```
+
+Upon conducting the Pulkstenis-Robinson tests, we obtained the following results:
+
+Pulkstenis-Robinson chi-squared test: The p-value was calculated as 0.03315, which is less than the significance level of 5%. Therefore, we reject the null hypothesis and conclude that the model does not fit the observed data well.
+
+Pulkstenis-Robinson deviance test: The p-value was found to be 0.01776, also below the significance level of 5%. Consequently, we reject the null hypothesis, indicating that the additional predictors in the more complex model significantly improve the model fit.
+
+Based on the results of these goodness-of-fit tests, it becomes apparent that the initial model for our task is not appropriate. This finding suggests the need for further refinement and consideration of potential issues such as feedback or endogeneity between views and ranks. To explore this, we removed the parameter of 'views' from the model and reevaluated the goodness of fit using the Pulkstenis-Robinson tests.
+
+```{r warning=FALSE}
+logit_ai <- polr(tier~like_rate+mark_rate
+                  +is_comic+is_Genshin+is_Honkai
+                  +comments+top_cnt+date_diff_day
+                  , data=ai)
+pulkrob.chisq(logit_ai, c("is_comic",'is_Genshin', 'is_Honkai'))
+pulkrob.deviance(logit_ai, c("is_comic",'is_Genshin', 'is_Honkai'))
+```
+
+Upon reanalysis, we found that the p-values for both the Pulkstenis-Robinson chi-squared and deviance tests are now larger than 5%. As a result, we cannot reject the null hypothesis anymore, indicating that the model without 'views' is deemed appropriate.
+
+These rigorous evaluations of the model's fit contribute to the reliability of our findings. By recognizing and addressing the limitations and potential endogeneity issues, we can enhance the robustness and validity of our evaluation model.
+
+## Odds Assumption Test
+### Brant's test
+
+To assess the validity of the proportional odds assumption, we conducted Brant's test. This test specifically examines the parallel regression assumption in the context of the polr model. The null hypothesis of Brant's test is that the parallel regression assumption holds.
+
+```{r, message=FALSE, warning=FALSE}
+brant(logit_ai)
+```
+
+By applying Brant's test to our model, we obtained the following results:
+
+- Omnibus test: The test statistic (X2) was calculated as 67.41, with a corresponding p-value of 0. As a result, we reject the null hypothesis, indicating that the parallel regression assumption does not hold for our model. This finding suggests that the ordered logit model is not suitable for our analysis.
+
+Furthermore, it is important to consider the variables associated with the rejection of the test, as indicated by their probabilities. Variables with probabilities higher than 5% are considered connected to the rejection of the test.
+
+Given that the proportional odds assumption does not hold, we need to explore alternative models. In this case, we opted for the ordered probit model, which does not rely on the proportional odds assumption.
+
+```{r message = FALSE, warning=FALSE}
+ai$tier<-as.factor(ai$rank)
+probit_ai <- clm(tier~like_rate+mark_rate
+                  +is_comic+is_Genshin+is_Honkai
+                  +comments+top_cnt+date_diff_day
+                  , data=ai, link=c('probit'))
+```
+
+To validate the appropriateness of the ordered probit model, we conducted the Pulkstenis-Robinson tests for goodness of fit. The results of these tests confirmed that the probit model is suitable for our analysis.
+
+```{r warning=FALSE}
+pulkrob.chisq(probit_ai, c("is_comic",'is_Genshin', 'is_Honkai'))
+pulkrob.deviance(probit_ai, c("is_comic",'is_Genshin', 'is_Honkai'))
+```
+
+Therefore, based on the rejection of the parallel regression assumption in Brant's test, we transitioned from the ordered logit model to the ordered probit model, ensuring a more accurate and reliable evaluation of the factors influencing the categorized rankings.
+
+## man made
+
+In the case of man-made artworks, we followed the same procedures as described earlier. However, the original variables did not meet the goodness-of-fit test criteria, with p-values below the 5% threshold. This indicates that the model with the original variables did not adequately fit the observed data for man-made artworks.
+
+```{r warning=FALSE, message=FALSE}
+man$like_rate3 <- man$like_rate^3
+man$mark_rate3 <- man$mark_rate^3
+man$tier<-as.factor(man$rank)
+probit_man <- clm(tier~like_rate+mark_rate
+                  +like_rate2+mark_rate2
+                  +mark_rate3
+                  +is_comic+is_Genshin+is_Honkai
+                  +top_cnt+date_diff_day+views
+                  , data=man, link=c('probit'))
+```
+
+```{r warning=FALSE, message=FALSE}
+pulkrob.chisq(probit_man, c("is_comic",'is_Genshin', 'is_Honkai'))
+pulkrob.deviance(probit_man, c("is_comic",'is_Genshin', 'is_Honkai'))
+```
+
+After excluding the 'comments' parameter and incorporating additional variables such as like_rate2, mark_rate2, and mark_rate3, our model for the man-made artworks demonstrates improved performance.
+
+The exclusion of the 'comments' parameter addresses the issue of endogeneity, which may have been present in the original model. By removing this variable, we mitigate the potential bias caused by the reciprocal relationship between comments and the ranks of the artworks.
+
+Furthermore, the inclusion of higher-order terms, such as the power and cube of mark_rate, allows us to capture potential nonlinear associations between the independent variable (like_rate) and the dependent variable (ranks). This consideration accounts for the possibility of non-linear patterns in the data, enhancing the model's ability to accurately represent the underlying relationship between like_rate and ranks. The introduction of these new variables enables a more flexible and nuanced analysis, potentially leading to improved goodness-of-fit test results.
+
+By incorporating these adjustments into the model, we aim to refine our understanding of the factors influencing the rankings of man-made artworks. These methodological refinements align with the rigorous standards expected in academic research and contribute to the advancement of knowledge in the field.
+
+## R2 statistics
+
+```{r}
+pR2(logit_ai) 
+pR2(probit_ai)
+pR2(probit_man)
+```
+
+In analyzing the R2 values for the logit and probit models, it is important to note that the McFadden R2 alone cannot be interpreted in isolation. Comparing the McFadden R2 values of different models provides a basis for understanding the relative goodness-of-fit among the models.
+
+For the AI-generated samples, the McFadden R2 of the probit model is 0.0823, while the McFadden R2 of the logit model is slightly lower at 0.0816. This suggests that both models have a similar level of explanatory power in capturing the variations in the data.
+
+On the other hand, for the man-made artworks samples, the McFadden R2 of the probit model is notably higher at 0.248. This indicates that the probit model explains a larger proportion of the variances in the rankings of man-made artworks compared to the logit model.
+
+It is worth noting that the McFadden R2 values, while providing a measure of the models' fit, do not offer insight into the significance or magnitude of individual independent variables. Therefore, additional analysis is necessary to interpret the effects and significance of the variables included in the models.
+
+Overall, the comparison of McFadden R2 values suggests that the probit model performs relatively better in explaining the rankings of both AI-generated samples and man-made artworks samples. However, further examination of the model coefficients and statistical tests is required to gain a comprehensive understanding of the factors influencing the rankings in each case.
+
+
+## Model Selection
+
+### Likelihood Ratio Test
+
+```{r warning=FALSE}
+probit_ai_restricted <- clm(as.factor(tier)~1, data=ai)
+lrtest(probit_ai, probit_ai_restricted)
+```
+
+We conducted a likelihood ratio test to compare the unrestricted model, which includes the independent variables, with the restricted model, which only includes a constant term (as.factor(tier)~1). The purpose of this test was to determine if the inclusion of the independent variables in the model significantly improved its fit.
+
+The likelihood ratio test yielded a p-value close to zero, indicating strong evidence against the null hypothesis (H0: beta1=beta2=0), which represents the condition of restriction in the restricted model. Therefore, we reject the null hypothesis and conclude that the independent variables in the unrestricted model are jointly significant.
+
+Based on the results of the likelihood ratio test, we can confidently choose the unrestricted model over the restricted model. This confirms that the inclusion of the independent variables improves the model's ability to explain and predict the rankings of the artworks on pixiv.net.
+
+### Test for variables to their powers
+
+```{r warning=FALSE}
+probit_ai_power <- clm(tier ~ like_rate+mark_rate
+                  +is_comic+is_Genshin+is_Honkai
+                  +comments+top_cnt+date_diff_day
+                  +like_rate2+mark_rate2, data = ai, link=c('probit'))
+anova(probit_ai, probit_ai_power)
+```
+
+To investigate the potential nonlinear relationships between the independent variables and the dependent variable, we performed a test on the inclusion of power terms in the model. We compared the unrestricted model, which includes the original independent variables (like_rate, mark_rate, is_comic, is_Genshin, is_Honkai, comments, top_cnt, date_diff_day), with an extended model that incorporates additional power terms (like_rate^2 and mark_rate^2).
+
+The analysis using the likelihood ratio test indicated a p-value of 0.00012, which is less than the predetermined significance level of 5%. Consequently, we reject the null hypothesis that the power terms have coefficients of zero, suggesting that the two models are significantly different. Hence, including the power terms in the model (probit_ai_power) yields a better fit than the model without the power terms (probit_ai).
+
+These findings highlight the importance of considering nonlinear associations between the independent variables and the dependent variable. By including the power terms, we capture potential nonlinear patterns and enhance the model's ability to accurately represent the complex relationship between the independent variables (such as like_rate and mark_rate) and the dependent variable (tier). This refined model provides a more comprehensive understanding of the factors influencing the rankings of the artworks on pixiv.net.
+
+### Variables Selection
+
+To select the most relevant variables for our AI model, we employed the general-to-specific method. We began by examining the coefficients of the variables in the extended model (probit_ai_power). The p-values associated with 'like_rate2' and 'is_Honkai1' were found to be less than 5%, indicating that these variables were statistically insignificant for the model.
+
+```{r}
+coeftest(probit_ai_power)
+```
+
+```{r}
+probit_ai_honkai <- clm(tier ~ like_rate+mark_rate
+                  +is_comic+is_Genshin
+                  +comments+top_cnt+date_diff_day
+                  +like_rate2+mark_rate2
+                  , data = ai, link=c('probit'))
+anova(probit_ai_power, probit_ai_honkai)
+```
+
+To refine the model further, we employed the process of elimination using the anova test. First, we compared the extended model (probit_ai_power) with a simplified model that excluded the 'is_Honkai' variable (probit_ai_honkai). The resulting p-value of 0.24 was greater than the predetermined significance level of 0.05, suggesting that the two models were not significantly different. Consequently, we selected the simpler model without the 'is_Honkai' variable.
+
+
+```{r}
+probit_ai_honkai_liked2 <- clm(tier ~ like_rate+mark_rate
+                  +is_comic+is_Genshin
+                  +comments+top_cnt+date_diff_day
+                  +mark_rate2, data = ai, link=c('probit'))
+anova(probit_ai_honkai, probit_ai_honkai_liked2)
+```
+
+Next, we compared the selected model (probit_ai_honkai) with another variant that excluded the 'like_rate2' variable (probit_ai_honkai_liked2). Again, the resulting p-value of 0.24 was greater than 0.05, indicating that the two models were not significantly different. Hence, we chose the model without the 'like_rate2' variable for its simplicity.
+
+```{r}
+coeftest(probit_ai_honkai_liked2)
+```
+
+```{r}
+pulkrob.chisq(probit_ai_honkai_liked2, c("is_comic",'is_Genshin', 'is_Honkai'))
+pulkrob.deviance(probit_ai_honkai_liked2, c("is_comic",'is_Genshin', 'is_Honkai'))
+```
+
+By performing the coeftest on the final model (probit_ai_honkai_liked2), we confirmed that all remaining parameters were statistically significant. Furthermore, we conducted the goodness-of-fit tests using the Pulkstenis-Robinson method. The results indicated that the model exhibited an appropriate fit to the observed data, as the p-values for both the chi-squared and deviance tests were greater than 5%.
+
+In summary, through the general-to-specific method, we arrived at a refined model (probit_ai_honkai_liked2) that includes the significant variables of 'like_rate', 'mark_rate', 'is_comic', 'is_Genshin', 'comments', 'top_cnt', and 'date_diff_day'. This selection process ensures that our model includes only the most relevant variables, enhancing its interpretability and reliability for analyzing the rankings of man-made artworks on pixiv.net.
+
+## man sample
+
+For the sample of man-made artworks, we applied the same general-to-specific method to refine our model. We removed the 'mark_rate', 'like_rate2', and 'is_Genshin' variables based on their statistical insignificance and potential lack of relevance to the ranking of man-made artworks on pixiv.net.
+
+The resulting optimized model (probit_man_opt) included the variables 'like_rate', 'mark_rate2', 'mark_rate3', 'is_comic', 'is_Honkai', 'top_cnt', 'date_diff_day', and 'views'. We performed the Pulkstenis-Robinson chi-squared and deviance tests to assess the goodness-of-fit of the model. The p-values associated with both tests were greater than 5%, indicating that the model exhibited an appropriate fit to the observed data for man-made artworks.
+
+Additionally, we conducted the coeftest on the optimized model to assess the significance of the remaining variables. The results confirmed that all variables included in the model were statistically significant, further validating their relevance to the ranking of man-made artworks on the platform.
+
+```{r warning=FALSE}
+probit_man_opt <- clm(tier~like_rate
+                  +mark_rate2
+                  +mark_rate3
+                  +is_comic+is_Honkai
+                  +top_cnt+date_diff_day+views
+                  , data=man, link=c('probit'))
+pulkrob.chisq(probit_man_opt, c("is_comic", 'is_Honkai'))
+pulkrob.deviance(probit_man_opt, c("is_comic", 'is_Honkai'))
+coeftest(probit_man_opt)
+```
+
+In summary, through the general-to-specific method, we arrived at an optimized model (probit_man_opt) for the analysis of man-made artworks. This model incorporates the significant variables of 'like_rate', 'mark_rate2', 'mark_rate3', 'is_comic', 'is_Honkai', 'top_cnt', 'date_diff_day', and 'views'. By selecting these variables, we ensure that our model focuses on the most influential factors and provides a more accurate representation of the ranking process for man-made artworks on pixiv.net.
+
+# Model Estimating
+## Comparation
+
+To Compare the results of the two models using an academic perspective, we observe both similarities and differences in the qualitative analysis of the variables' effects on the tier outcome in the ordered choice model. 
+
+In analyzing the results, it is important to focus on the estimated coefficients rather than the threshold parameters. The estimated coefficients provide valuable insights into the effects of each variable on the tier rankings in both the AI-generated and man-made sample models.
+
+```{r warning=FALSE, message=FALSE}
+probit_ai <- ologit.reg(tier~like_rate+mark_rate
+                  +is_comic+is_Genshin
+                  +comments+top_cnt+date_diff_day
+                  +mark_rate2
+                  ,data=ai)
+summary(probit_ai)
+```
+
+```{r warning=FALSE, message=FALSE}
+probit_man <- ologit.reg(tier~like_rate
+                  +mark_rate2
+                  +mark_rate3
+                  +is_comic+is_Honkai
+                  +top_cnt+date_diff_day+views
+                  ,data=man)
+summary(probit_man)
+```
+
+In the AI-generated sample model, an increase in the variable mark_rate2(square of bookmarked rate) leads to a increase in the probability of achieving tier-1 and an decrease in the probability of achieving tier-5. This suggests that higher like rates are associated with higher tiers, indicating a positive relationship between like_rate and the rank.
+
+On the other hand, in the man-made sample model, an increase in the variable mark_rate2 is associated with a decrease in the probability of achieving tier-1 and an increase in the probability of achieving tier-5. Therefore, higher bookmarked rates in the man-made sample model are indicative of a lower likelihood of being ranked in tier-1 and a higher likelihood of being ranked in tier-5.
+
+Furthermore, the presence of additional variables in each model contributes to their differences. In the AI-generated sample model, variables such as is_Genshin1 (related to the game "Genshin") and comments play significant roles in determining the tier outcome. Conversely, the man-made sample model includes variables such as mark_rate3 (mark rate cubed), is_Honkai1 (related to the series games "Honkai"), and views, which are not considered in the AI-generated sample model. These variations in variable inclusion reflect the specific characteristics and influences within each sample.
+
+The difference in the relationship between mark_rate2 and the tier variable in the AI-generated and man-made models could be attributed to several factors. 
+
+Firstly, it's important to consider the underlying characteristics and composition of the AI-generated and man-made samples. These samples may have distinct patterns and characteristics, leading to variations in how mark_rate2 influences the tier variable. The AI-generated sample may have a different distribution or range of mark_rate2 values compared to the man-made sample, which could result in diverse effects on the tier variable.
+
+Secondly, the AI-generated and man-made samples may differ in terms of the content or context of the artworks. The relationship between mark_rate2 and the tier variable could be influenced by various factors such as the subject matter, style, or themes of the artworks. It's possible that mark_rate2 has a stronger impact on the tier variable in one sample due to specific characteristics or preferences associated with AI-generated or man-made artworks.
+
+Additionally, the modeling approach and other variables included in the models could contribute to the differences in the effect of mark_rate2 on the tier variable. The inclusion of different variables or the use of alternative modeling techniques in the AI-generated and man-made models may interact with mark_rate2 differently, leading to contrasting results.
+
+In summary,while both models share similar relationship between variables like like_rate and the probability of tier-1, the influence on tier-5 differs. The additional variables in each model highlight the unique factors affecting the tier outcome in the respective sample. By analyzing these differences and similarities, researchers can gain insights into the nuanced dynamics and factors driving the rank variation between AI-generated and man-made samples in the context of the ordered choice model. The discrepancies between these two models can be attributed to various factors, such as differences in data sources, model training techniques, or the inclusion/exclusion of certain variables. These variations highlight the complex nature of modeling ordered choice outcomes and the impact of different factors on the ranking of content in AI-generated and man-made scenarios. Further analysis and research are needed to explore these differences and their underlying causes in more detail.
+
+## Marginal Effects
+
+To analyze the Marginal Effects of the AI-generated artworks model, we examine the output of the code provided. The marginal effects represent the change in the probability of each outcome category based on a unit change in the corresponding independent variable, while holding other variables constant.
+
+```{r warning=FALSE}
+margins.oglmx(probit_ai)
+```
+
+In the case of Outcome==1, which corresponds to tier 1 in the ranking, artworks related to Genshin have a higher probability compared to artworks related to other topics, with a difference of 2.8119 percentage points. This implies that Genshin-themed artworks are more likely to be ranked in the top tier.
+
+Furthermore, an increase a unit in the 'like_rate' variable would lead to an increase in the probability of an artwork being ranked in tier 1 by 108.1806 percentage points. This suggests that higher like rate contribute to a higher likelihood of achieving a top-tier ranking.
+
+Based on the code output, we can analyze the effects of different outcomes on rank and the influence of various variables.
+
+For Outcome==1, which represents the first tier ranking, the following other variables have an impact on the rank:
+- is_comic1 (whether it is related to comics): Increasing the presence of comic-related artworks significantly reduces the probability of achieving the first tier rank, decreasing it by 11.753 percentage points.
+- is_Genshin1 (whether it is related to Genshin): Artworks related to Genshin have a higher probability of achieving the first tier rank compared to other themes, increasing it by 2.8119 percentage points.
+- like_rate: An increase in the like rate of the artwork leads to a higher probability of attaining the first tier rank, with a marginal effect of 1.0818.
+- mark_rate: Higher mark rates are associated with a lower probability of achieving the first tier rank, resulting in a marginal effect of -1.2748.
+- comments: The number of comments received has a positive impact on the probability of achieving the first tier rank, with a marginal effect of 0.0080.
+- top_cnt: Increasing the number of times the artwork appears in the top selection enhances the likelihood of attaining the first tier rank, with a marginal effect of 0.1312.
+- date_diff_day: Longer time intervals since the artwork's creation date are associated with a higher probability of achieving the first tier rank, resulting in a marginal effect of 0.0632.
+- like_rate2: The square of the like rate also positively influences the probability of attaining the first tier rank, with a marginal effect of 4.9383.
+
+Similarly, we can analyze the effects of these variables on other outcomes (Outcome==2, Outcome==3, Outcome==4, Outcome==5) by referring to the respective marginal effects provided in the code output.
+
+By analyzing the Marginal Effects, we gain insights into the impact of specific variables on the probabilities of different ranking outcomes. These findings provide valuable information for understanding the factors influencing the rankings of AI-generated artworks on the platform.
+
+# Discussion
+
+# Conclusion
+
+# References
+
+::: {#refs}
+:::
