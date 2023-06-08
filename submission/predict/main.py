@@ -5,11 +5,11 @@ import re
 import time
 
 print('Loading train data...')
-train_df = pd.read_csv('../../data/newborn_train.csv', sep=',')\
+train_df = pd.read_csv('newborn_train.csv', sep=',')\
     .rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
 print('Loading test data...')
-test_df = pd.read_csv('../../data/newborn_test.csv', sep=',')\
+test_df = pd.read_csv('newborn_test.csv', sep=',')\
     .rename(columns=lambda x: re.sub('[^A-Za-z0-9_]+', '', x))
 
 print('Feature engineering...')
