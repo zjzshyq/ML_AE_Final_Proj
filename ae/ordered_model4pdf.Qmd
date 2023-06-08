@@ -63,6 +63,8 @@ In our analysis, we employ established econometric techniques commonly utilized 
 
 By employing this comprehensive analytical framework, our study aims to provide a nuanced understanding of the intricate dynamics between AI-generated artwork and user preferences. The subsequent sections will present the empirical findings, contributing to the literature on the effects of AI-generated artwork within the online art community.
 
+# Literature review
+
 # Data and Method
 
 This study utilizes data collected from [pixiv.net](http://pixiv.net), a popular platform for painters to share their artwork, to investigate the impact of AI-generated artworks on user-generated content. Starting from November of the previous year, the platform has witnessed a continuous influx of AI-generated works. The dataset comprises information such as tags, Views, Likes, Bookmarks, and Comments for the Top 50 artworks or pictures each day, spanning from October 31, 2022, to May 15, 2023.
@@ -438,11 +440,9 @@ Similarly, we can analyze the effects of these variables on other outcomes (Outc
 
 By analyzing the Marginal Effects, we gain insights into the impact of specific variables on the probabilities of different ranking outcomes. These findings provide valuable information for understanding the factors influencing the rankings of AI-generated artworks on the platform.
 
-# Discussion
-
-# Conclusion
-
-# References
+# Bibliography
 
 ::: {#refs}
 :::
+
+# Appendix
