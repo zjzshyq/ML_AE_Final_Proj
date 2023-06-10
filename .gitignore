@@ -6,6 +6,9 @@ __pycache__/
 *.RData
 *.Rhistory
 .quarto/
+.gitignore
+.pdf
+.html
 
 pre_work/
 data/
