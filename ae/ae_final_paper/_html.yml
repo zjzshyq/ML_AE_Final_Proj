@@ -1,0 +1,13 @@
+date: today
+author:
+  - name: Yiqing Hu
+  - name: Rahila Mammadova Huseynova
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    theme:
+      dark: superhero
+      light: flatly
+    number-sections: true
+    title-block-banner: true

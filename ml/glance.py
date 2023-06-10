@@ -26,17 +26,17 @@ def check_df(df, is_pre=False):
     na_columns = df.isna().any()
     na_columns = na_columns[na_columns].index.tolist()
 
-    if not is_pre:
-        print('checking if col less 0')
-        for col in df.columns:
-            if (df[col] < 0).any():
-                print('col less 0 values', col)
+    # if not is_pre:
+    #     print('checking if col less 0')
+    #     for col in df.columns:
+    #         if (df[col] < 0).any():
+    #             print('col less 0 values', col)
 
-        # 输出存在缺失值的列
-        if len(na_columns) > 0:
-            print('col_with_NA:', na_columns)
-        else:
-            print('There is no NA in DataFrame already')
+    # 输出存在缺失值的列
+    if len(na_columns) > 0:
+        print('col_with_NA:', na_columns)
+    else:
+        print('There is no NA in DataFrame already')
 
 
 def load_df(csv_dir, seg=0.1, show=False):

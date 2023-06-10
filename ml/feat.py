@@ -73,27 +73,25 @@ def int_process(df: pd.DataFrame, col_lst: list):
 
 def float_process2(df: pd.DataFrame, col_lst: list):
     for col in col_lst:
-        df = na_col_new(df, col)
         mean_value = df[col].mean()
         df[col].fillna(mean_value, inplace=True)
-
-        sd_value = df[col].std()
-        threshold = 3
-        df.loc[np.abs(df[col] - mean_value) > threshold * sd_value, col] = mean_value
-        # scaler = RobustScaler()
-        # df[col] = scaler.fit_transform(df[[col]])
+        if col == 'mother_delivery_weight':
+            df[col] = df[col].astype(float) / 400
+        else:
+            df[col] = df[col].astype(float) / 100
+        df[col] = df[col].clip(upper=1)
+        scaler = RobustScaler()
+        df[col] = scaler.fit_transform(df[[col]])
     return df
 
 
 def int_process2(df: pd.DataFrame, col_lst: list):
     for col in col_lst:
+        if col == 'prenatal_care_month':
+            df[col].replace(99, np.nan, inplace=True)
         med_value = df[col].median()
         df[col].fillna(med_value, inplace=True)
-        sd_value = df[col].std()
-        threshold = 3
-        df.loc[np.abs(df[col] - med_value) > threshold * sd_value, col] = med_value
-        scaler = RobustScaler()
-        df[col] = scaler.fit_transform(df[[col]])
+        int_standard(df, col)
     return df
 
 
@@ -152,7 +150,7 @@ def outliers4target(df, col):
 def mk_feat(is_train=True, is_save=True):
     if is_train:
         feat_dir = '../data/train_data_cleaned.csv'
-        df = load_df('../data/newborn_train_hyq.csv', seg=1)
+        df = load_df('../data/newborn_train_hyq.csv', seg=0.5)
         # df = outliers4target(df, 'newborn_weight')
     else:
         feat_dir = '../data/test_data_cleaned.csv'
@@ -188,8 +186,8 @@ def mk_feat_pure(df):
                     'previous_cesarean', 'mother_marital_status',
                     'newborn_gender']
 
-    df = float_process(df, float_lst)
-    df = int_process(df, int_lst)
+    df = float_process2(df, float_lst)
+    df = int_process2(df, int_lst)
     df = discrete_process(df, discrete_lst)
 
     significant_feat = ['mother_delivery_weight', 'mother_height', 'mother_weight_gain', 'number_prenatal_visits']
@@ -198,8 +196,30 @@ def mk_feat_pure(df):
     return df
 
 
+def mk_feat_clustering():
+    feat_dir = '../data/train_data_cleaned4cluster.csv'
+    df = load_df('../data/newborn_train.csv', seg=0.05)
+
+    float_lst = ['mother_body_mass_index', 'mother_delivery_weight',
+                 'mother_height', 'mother_weight_gain']
+    int_lst = ['father_age', 'cigarettes_before_pregnancy',
+               'number_prenatal_visits', 'prenatal_care_month']
+    discrete_lst = ['mother_race', 'father_education',
+                    'previous_cesarean', 'mother_marital_status',
+                    'newborn_gender']
+
+    df = float_process2(df, float_lst)
+    df = int_process2(df, int_lst)
+    df = discrete_process(df, discrete_lst)
+
+    check_df(df, False)
+    df.to_csv(feat_dir, index=False)
+    print('data train_data_cleaned for clustering saved')
+
+
 if __name__ == '__main__':
-    mk_feat()
+    # mk_feat()
+    mk_feat_clustering()
     # newborn = load_df('../data/newborn_train_hyq.csv', seg=1)
     # float_feat_lst = ['mother_body_mass_index', 'mother_delivery_weight',
     #                   'mother_height', 'mother_weight_gain']

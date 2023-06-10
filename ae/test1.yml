@@ -1,0 +1,19 @@
+title: 'Analysis of User Preferences between AI-generated and Hand-drawn Artwork: A Case Study of pixiv.net'
+author:
+  - name: 'Yiqing Hu'
+  - name: 'Rahila Mammadova Huseynova'
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    theme:
+      dark: superhero
+      light: flatly
+    number-sections: true
+    title-block-banner: true
+bibliography: bibliography.bib
+csl: ieee.csl
+project:
+  render:
+    - test1.qmd

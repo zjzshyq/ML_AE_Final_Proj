@@ -1,0 +1,35 @@
+---
+title: 'Analysis of User Preferences between AI-generated and Hand-drawn Artwork: A Case Study of pixiv.net'
+author:
+  - name: Yiqing Hu
+    affiliation: University of Warsaw, Faculty of Economics Sciences
+    email: y.hu7@student.uw.edu.pl
+  - name: Rahila Mammadova Huseynova
+    affiliation: University of Warsaw, Faculty of Economics Sciences
+    email: r.mammadovah@student.uw.edu.pl
+date: today
+format:
+  pdf:
+    citation_package: natbib
+    documentclass: article
+    fontsize: 11pt
+    geometry: margin=1in
+    latex-tinytex: false
+bibliography: bibliography.bib
+csl: ieee.csl
+---
+
+$$
+\text{tier} = \left\lfloor \frac{{\text{{rank}} - 1}}{{10}} \right\rfloor + 1
+$$
+
+```{r, results='markup'}
+txt <-  '1111111\n2222'
+print(gsub('\n','<br/>', txt))
+summary(txt)
+cat(gsub('\n','<br/>', capture.output(summary(txt))))
+```
+
+`r gsub('\n','<br/>', capture.output(summary(txt)))`
+
+`r capture.output(summary(txt))`
