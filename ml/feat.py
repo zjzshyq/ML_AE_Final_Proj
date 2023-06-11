@@ -3,6 +3,13 @@ from glance import load_df, check_df
 import pandas as pd
 import numpy as np
 import visual
+import pandas as pd
+from sklearn.cluster import KMeans
+import copy
+
+
+def kmeans_tag():
+    df = load_df('../data/newborn_train_hyq.csv', seg=0.5)
 
 
 def na_col_new(df, col):
@@ -150,7 +157,7 @@ def outliers4target(df, col):
 def mk_feat(is_train=True, is_save=True):
     if is_train:
         feat_dir = '../data/train_data_cleaned.csv'
-        df = load_df('../data/newborn_train_hyq.csv', seg=0.5)
+        df = load_df('../data/newborn_train_hyq.csv', seg=0.1)
         # df = outliers4target(df, 'newborn_weight')
     else:
         feat_dir = '../data/test_data_cleaned.csv'
@@ -159,8 +166,8 @@ def mk_feat(is_train=True, is_save=True):
     float_lst = ['mother_body_mass_index', 'mother_delivery_weight',
                  'mother_height', 'mother_weight_gain']
     int_lst = ['father_age', 'cigarettes_before_pregnancy',
-               'number_prenatal_visits', ]
-    discrete_lst = ['mother_race', 'father_education','prenatal_care_month',
+               'number_prenatal_visits','prenatal_care_month' ]
+    discrete_lst = ['mother_race', 'father_education',
                     'previous_cesarean', 'mother_marital_status',
                     'newborn_gender']
     significant_feat = ['mother_delivery_weight', 'mother_height', 'mother_weight_gain', 'number_prenatal_visits']
@@ -168,6 +175,8 @@ def mk_feat(is_train=True, is_save=True):
     df = float_process(df, float_lst)
     df = int_process(df, int_lst)
     df = discrete_process(df, discrete_lst)
+    df = feature_cross(df)
+
     df = square_process(df, significant_feat)
 
     if is_save:
@@ -177,11 +186,36 @@ def mk_feat(is_train=True, is_save=True):
     return df
 
 
+def sim_cos(col1, col2):
+    if 'NA' in col1 or 'NA' in col2 or 'unknown' in col1 or 'unknown' in col2:
+        return True
+    if col1 == 'newborn_weight' or col2 == 'newborn_weight':
+        return True
+
+    words1 = set(col1.split('_'))
+    words2 = set(col2.split('_'))
+    common_words = words1.intersection(words2)
+
+    return any(word for word in common_words if word != 'mother' and word != 'father')
+
+
+def feature_cross(df: pd.DataFrame):
+    df_new = copy.deepcopy(df)
+    for col1 in df.columns:
+        for col2 in df.columns:
+            if sim_cos(col1, col2):
+                continue
+            else:
+                new_feature = f'{col1}_{col2}'
+                df_new[new_feature] = df[col1]*df[col2]
+    return df_new
+
+
 def mk_feat_pure(df):
     float_lst = ['mother_body_mass_index', 'mother_delivery_weight',
                  'mother_height', 'mother_weight_gain']
     int_lst = ['father_age', 'cigarettes_before_pregnancy',
-               'number_prenatal_visits', ]
+               'number_prenatal_visits', 'prenatal_care_month']
     discrete_lst = ['mother_race', 'father_education','prenatal_care_month',
                     'previous_cesarean', 'mother_marital_status',
                     'newborn_gender']
@@ -189,6 +223,7 @@ def mk_feat_pure(df):
     df = float_process2(df, float_lst)
     df = int_process2(df, int_lst)
     df = discrete_process(df, discrete_lst)
+    df = feature_cross(df)
 
     significant_feat = ['mother_delivery_weight', 'mother_height', 'mother_weight_gain', 'number_prenatal_visits']
     df = square_process(df, significant_feat)
@@ -196,10 +231,7 @@ def mk_feat_pure(df):
     return df
 
 
-def mk_feat_clustering():
-    feat_dir = '../data/train_data_cleaned4cluster.csv'
-    df = load_df('../data/newborn_train.csv', seg=0.05)
-
+def mk_feat_pure2(df):
     float_lst = ['mother_body_mass_index', 'mother_delivery_weight',
                  'mother_height', 'mother_weight_gain']
     int_lst = ['father_age', 'cigarettes_before_pregnancy',
@@ -211,15 +243,36 @@ def mk_feat_clustering():
     df = float_process2(df, float_lst)
     df = int_process2(df, int_lst)
     df = discrete_process(df, discrete_lst)
+    df = feature_cross(df)
 
-    check_df(df, False)
-    df.to_csv(feat_dir, index=False)
-    print('data train_data_cleaned for clustering saved')
+    significant_feat = ['mother_delivery_weight', 'mother_height', 'mother_weight_gain', 'number_prenatal_visits']
+    df = square_process(df, significant_feat)
+
+    return df
+
+
+def mk_feat_clustering(df0):
+    float_lst = ['mother_body_mass_index', 'mother_delivery_weight',
+                 'mother_height', 'mother_weight_gain']
+    int_lst = ['father_age', 'cigarettes_before_pregnancy',
+               'number_prenatal_visits', 'prenatal_care_month']
+    discrete_lst = ['mother_race', 'father_education',
+                    'previous_cesarean', 'mother_marital_status',
+                    'newborn_gender']
+    df = df0.drop('newborn_weight', axis=1)
+    df = float_process2(df, float_lst)
+    df = int_process2(df, int_lst)
+    df = discrete_process(df, discrete_lst)
+
+    kmeans = KMeans(n_clusters=5)
+    cluster_labels = kmeans.fit_predict(df)
+    df0['ClusterLabel'] = cluster_labels
+    return df0
 
 
 if __name__ == '__main__':
-    # mk_feat()
-    mk_feat_clustering()
+    mk_feat()
+    # mk_feat_clustering()
     # newborn = load_df('../data/newborn_train_hyq.csv', seg=1)
     # float_feat_lst = ['mother_body_mass_index', 'mother_delivery_weight',
     #                   'mother_height', 'mother_weight_gain']
