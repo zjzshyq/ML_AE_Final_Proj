@@ -1,7 +1,6 @@
 author:
   - name: Yiqing Hu
     affil-id: 1
-    corresponding: true
     email: y.hu7@student.uw.edu.pl
   - name: Rahila Mammadova Huseynova
     affil-id: 1
@@ -25,8 +24,3 @@ format:
         \renewcommand*{\Authand}{, }
         \renewcommand*{\Authands}{, }
         \renewcommand\Affilfont{\small}
-output:
-  pdf_document:
-    pandoc_args: --listings
-    includes:
-      in_header: preamble.tex

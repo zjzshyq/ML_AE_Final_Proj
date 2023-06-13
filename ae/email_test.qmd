@@ -1,0 +1,16 @@
+---
+title: test
+author:
+  - name: Yiqing Hu
+    email: y.hu7@student.uw.edu.pl
+format:
+  pdf:
+    fontsize: 11pt
+    geometry: margin=1in
+---
+
+### 1
+
+dsdasd
+
+
