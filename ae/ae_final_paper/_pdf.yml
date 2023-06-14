@@ -1,10 +1,8 @@
 author:
   - name: Yiqing Hu
     affil-id: 1
-    email: y.hu7@student.uw.edu.pl
   - name: Rahila Mammadova Huseynova
     affil-id: 1
-    email: r.mammadovah@student.uw.edu.pl
 affiliations:
   - id: 1
     name: University of Warsaw, Faculty of Economics Sciences
@@ -24,3 +22,4 @@ format:
         \renewcommand*{\Authand}{, }
         \renewcommand*{\Authands}{, }
         \renewcommand\Affilfont{\small}
+

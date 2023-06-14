@@ -1,4 +1,5 @@
 ```{r echo=FALSE, message = FALSE}
+# if quarto crushed again, use cmd: quarto install tinytex
 setwd('/Users/huyiqing/PycharmProjects/UW_lab/ML_Project/ae/ae_final_paper')
 csv_dir <- 'pixiv_tops_lm.csv'
 Sys.setenv(LANG = "en")
@@ -16,6 +17,11 @@ library('performance') # r2_mckelvey
 library("BaylorEdPsych") # PseudoR2
 library("generalhoslem") # lipsitz, logitgof, pulkrob
 ```
+
+\vspace{-23pt}
+\begin{center}
+\textit{*Corresponding: y.hu7@student.uw.edu.pl}
+\end{center}
 
 # Abstract
 
@@ -59,11 +65,11 @@ The literature review highlights both the positive and negative consequences of 
 
 # Data
 
-In this study, we developed a web spider to crawl the dataset from [pixiv.net](http://pixiv.net), a prominent online platform where artists share their artwork. Pixiv.net is widely recognized and highly regarded within the online art community, making it an ideal source for collecting data related to AI-generated artwork and user preferences.
+In this study, we developed a web spider to crawl the dataset from [pixiv.net](http://pixiv.net), a prominent online platform where artists share their artwork. The website pixiv.net is widely recognized and highly regarded within the online art community, making it an ideal source for collecting data related to AI-generated artwork and user preferences.
 
-Pixiv.net provides a rich and diverse collection of artwork, including both AI-generated and hand-drawn creations. Artists from various backgrounds and genres contribute to the platform, resulting in a vast repository of artistic expressions.
+The website [pixiv.net](http://pixiv.net) provides a rich and diverse collection of artwork, including both AI-generated and hand-drawn creations. Artists from various backgrounds and genres contribute to the platform, resulting in a vast repository of artistic expressions.
 
-The dataset we collected covers a specific period, starting from November of the previous year and spanning a continuous influx of AI-generated works. It comprises essential information related to the artworks, such as tags, views, likes, bookmarks, and comments. Specifically, we focused on the Top 50 artworks or pictures each day, ensuring a comprehensive representation of the most popular and engaging content within the online art community.
+The dataset we collected from top list of [pixiv.net/ranking](https://www.pixiv.net/ranking.php) covers a specific period, starting from November of the previous year and spanning a continuous influx of AI-generated works. It comprises essential information related to the artworks, such as tags, views, likes, bookmarks, and comments. Specifically, we focused on the Top 50 artworks or pictures each day, ensuring a comprehensive representation of the most popular and engaging content within the online art community.
 
 By utilizing the data from pixiv.net, we are able to examine the dynamic relationship between AI-generated artwork and user preferences over time. This allows us to gain valuable insights into the evolving landscape of the online art community and understand the factors that influence the rankings and preferences of AI-generated images compared to hand-drawn artwork.
 
@@ -399,7 +405,6 @@ probit_ai_honkai <- clm(tier ~ like_rate+mark_rate
                   +like_rate2+mark_rate2
                   , data = ai, link=c('probit'))
 sim <- anova(probit_ai_power, probit_ai_honkai)
-
 cat(paste0('\t\t\tprobit_ai_honkaiTag\nPr(>Chisq)\t', sim$`Pr(>Chisq)`[2], 
        '\nLR.stat\t\t',sim$LR.stat[2], '\ndf\t\t\t',sim$df[2],'\n\n'))
 ```

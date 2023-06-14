@@ -1,16 +1,37 @@
 ---
 title: test
+subtitle: email
 author:
   - name: Yiqing Hu
+    affil-id: 1
     email: y.hu7@student.uw.edu.pl
+  - name: Rahila Mammadova Huseynova
+    affil-id: 1
+    email: r.mammadovah@student.uw.edu.pl
+affiliations:
+  - id: 1
+    name: University of Warsaw, Faculty of Economics Sciences
 format:
   pdf:
+    citation_package: natbib
+    documentclass: article
     fontsize: 11pt
     geometry: margin=1in
+    latex-tinytex: false
+    number-sections: true
+    template-partials:
+      - title.tex
+    include-in-header:
+      text: |
+        \usepackage[noblocks]{authblk}
+        \renewcommand*{\Authsep}{, }
+        \renewcommand*{\Authand}{, }
+        \renewcommand*{\Authands}{, }
+        \renewcommand\Affilfont{\small}
 ---
 
-### 1
+# chapter 1
 
-dsdasd
+Testing...
 
 
