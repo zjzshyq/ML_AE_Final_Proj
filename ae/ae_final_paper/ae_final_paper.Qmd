@@ -524,7 +524,7 @@ In summary,while both models share similar relationship between variables like l
 ## Marginal Effects
 To analyze the Marginal Effects of the AI-generated artworks model, we examine the output of the code provided. The marginal effects represent the change in the probability of each outcome category based on a unit change in the corresponding independent variable, while holding other variables constant. We choose margins.oglm[^10] to imply marginal effects.
 
-```{r echo=FALSE, warning=FALSE}
+```{r ologit_ai_margin, echo=FALSE, warning=FALSE}
 # Calculate the marginal effects for the probit model
 margins.oglmx(probit_ai)
 ```
@@ -682,11 +682,11 @@ In the above code, we extend the probit model probit_ai by including squared var
 
 ### margins.oglmx
 
-[^10]: Please refer to the Appendix for the relevant code pertaining to the margins.oglmx algorithm for marginal effects.
+[^10]: Please refer to the Appendix for the relevant code pertaining to the margins.oglmx algorithm.
 
-In this section, we present the code implementation and the results for the marginal effects analysis of the probit model probit_ai. This analysis allows us to examine the differential impact of various variables on the rankings of AI-generated images.
+In this section, we present the code implementation and the results for the estimation and marginal effects analysis of the probit model probit_ai. This analysis allows us to examine the differential impact of various variables on the rankings of AI-generated images.
 
-```{r ref.label='probit_ai_power', eval = FALSE}
+```{r ref.label='ologit_ai_margin', eval = FALSE}
 ```
 
 In the above code, we use the margins.oglmx() function to calculate the marginal effects for the probit_ai model. This function computes the average marginal effects of each predictor variable on the predicted probabilities of the different rank levels.
